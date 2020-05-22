@@ -34,6 +34,7 @@
 stages:
   - build
   - publish
+  - sync
 
 .export_docker_vars: &export_docker_vars |
   export DOCKER_BUILD_TAG=${CI_COMMIT_REF_SLUG:-local}
@@ -155,3 +156,25 @@ publish:image:mender:dockerhub:
     # while overriding it at the end for Docker Hub, so that the tag/push in script is done for the latter.
     - *export_docker_vars
     - export DOCKER_REPOSITORY=${DOCKER_REPOSITORY#registry.mender.io/}
+
+# Extra job for Enterprise repos:
+# on 'staging' changes, propagate built docker image version
+# to 'saas/staging' Mender stack file for given repo
+sync:saas-staging: 
+  stage: sync
+  only:
+    refs:
+      - /^staging$/
+  dependencies:
+      - build:docker
+  image: debian
+  before_script:
+    - *export_docker_vars
+  script:
+      - git clone https://github.com/mendersoftware/saas.git mender-saas
+      - cd mender-saas/kubernetes/mender_stack
+      - git checkout origin/staging
+      - "sed -i 's|image:.*|image: $DOCKER_BUILD_SERVICE_IMAGE|g' $SAAS_MENDER_STACK_FILE"
+      - git add $SAAS_MENDER_STACK_FILE
+      - git commit -m "[BOT] TODO" 
+      - git push origin HEAD:staging
