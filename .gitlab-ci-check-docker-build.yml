@@ -162,9 +162,9 @@ publish:image:mender:dockerhub:
 # to 'saas/staging' Mender stack file for given repo
 sync:saas-staging: 
   stage: sync
-  only:
-    refs:
-      - /^staging$/
+  #only:
+  #  refs:
+  #    - /^staging$/
   dependencies:
       - build:docker
   image: debian
@@ -177,4 +177,4 @@ sync:saas-staging:
       - "sed -i 's|image:.*|image: $DOCKER_BUILD_SERVICE_IMAGE|g' $SAAS_MENDER_STACK_FILE"
       - git add $SAAS_MENDER_STACK_FILE
       - git commit -m "[BOT] TODO" 
-      - git push origin HEAD:staging
+      - git push origin HEAD:staging-test
